@@ -12,8 +12,16 @@ git config --global url.https://github.com/.insteadOf git://github.com/
 
 ## Usage
 
+For local testing:
+
 ```
 iex --sname server --cookie chocolate-chip -S mix
+```
+
+For external testing (find your LAN ip with `ifconfig`):
+
+```
+iex --name server@10.128.146.57 --cookie chocolate-chip -S mix
 ```
 
 ## Resources
