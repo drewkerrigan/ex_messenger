@@ -2,6 +2,14 @@
 
 An OTP Messaging Platform in Elixir
 
+## ErlangDC 2013 R13B Notes
+
+If using the guest wifi, you can force https instead of ssh for git with the following:
+
+```
+git config --global url.https://github.com/.insteadOf git://github.com/
+```
+
 ## Usage
 
 ```
