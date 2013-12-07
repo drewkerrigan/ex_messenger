@@ -22,7 +22,7 @@ defmodule ExMessenger.Server do
         newusers = users |> HashDict.put(nick, node(pid))
         userlist = newusers |> HashDict.keys |> Enum.join ":"
 
-        :gen_server.cast(:message_server, {:say, :server, "**#{nick} has joined**\n"})
+        :gen_server.cast(:message_server, {:say, :server, "**#{nick} has joined**"})
         {:reply, {:ok, userlist}, newusers}
     end
   end
@@ -36,7 +36,7 @@ defmodule ExMessenger.Server do
       user == node(pid) ->
         newusers = users |> HashDict.delete nick
 
-        :gen_server.cast(:message_server, {:say, :server, "**#{nick} has left**\n"})
+        :gen_server.cast(:message_server, {:say, :server, "**#{nick} has left**"})
         {:reply, :ok, newusers}
       true ->
         {:reply, :not_allowed, users}
@@ -46,14 +46,17 @@ defmodule ExMessenger.Server do
   def handle_call(_, _, users), do: {:reply, :error, users}
 
   def handle_cast({:say, nick, msg}, users) do
-    users |> broadcast "#{nick}: #{msg}\n"
+    ears = HashDict.delete(users, nick)
+    broadcast(ears, nick, "#{msg}")
+
     {:noreply, users}
   end
 
   def handle_cast({:private_message, nick, receiver, msg}, users) do
     case users |> HashDict.get receiver do
       nil -> :ok
-      r -> :ok #send a message to another node? maybe to a gen server running on client.
+      r ->
+        :gen_server.cast({:message_handler, r}, {:message, nick, "(#{msg})"})
     end
     {:noreply, users}
   end
@@ -61,7 +64,7 @@ defmodule ExMessenger.Server do
   def handle_cast(_, users), do: {:noreply, users}
 
   ### Internal functions
-  defp broadcast(users, msg) do
-    users |> Enum.map(fn { nick, node } -> IO.inspect {nick, node} end)
+  defp broadcast(users, from, msg) do
+    Enum.each(users, fn { _, node } -> :gen_server.cast({:message_handler, node}, {:message, from, msg}) end)
   end
 end
