@@ -22,6 +22,8 @@ defmodule ExMessenger.Server do
         newusers = users |> HashDict.put(nick, node(pid))
         userlist = newusers |> HashDict.keys |> Enum.join ":"
 
+        IO.puts "#{nick} joined, userlist: #{userlist}"
+
         :gen_server.cast(:message_server, {:say, :server, "**#{nick} has joined**"})
         {:reply, {:ok, userlist}, newusers}
     end
@@ -35,6 +37,9 @@ defmodule ExMessenger.Server do
         {:reply, :user_not_found, users}
       user == node(pid) ->
         newusers = users |> HashDict.delete nick
+        userlist = newusers |> HashDict.keys |> Enum.join ":"
+
+        IO.puts "#{nick} left, userlist: #{userlist}"
 
         :gen_server.cast(:message_server, {:say, :server, "**#{nick} has left**"})
         {:reply, :ok, newusers}
@@ -47,6 +52,9 @@ defmodule ExMessenger.Server do
 
   def handle_cast({:say, nick, msg}, users) do
     ears = HashDict.delete(users, nick)
+
+    IO.puts "#{nick} said #{msg}"
+
     broadcast(ears, nick, "#{msg}")
 
     {:noreply, users}
