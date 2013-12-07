@@ -21,7 +21,7 @@ iex --sname server --cookie chocolate-chip -S mix
 For external testing (find your LAN ip with `ifconfig`):
 
 ```
-iex --name server@10.128.146.57 --cookie chocolate-chip -S mix
+iex --name server@<your ip> --cookie chocolate-chip -S mix
 ```
 
 ## Resources
