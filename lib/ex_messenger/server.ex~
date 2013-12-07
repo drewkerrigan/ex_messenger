@@ -1,0 +1,79 @@
+# Inspiration / blatant porting from: github.com/luisgabriel/erl-chat-server
+
+defmodule ExMessenger.Server do
+  use GenServer.Behaviour
+
+  def start_link([]) do
+    :gen_server.start_link({ :local, :message_server }, __MODULE__, stack, [])
+  end
+
+  def init([]) do
+    users = HashDict.new()
+    { :ok, users }
+  end
+
+  def handle_call({:connect, nick, node}, _, users) do
+    if users |> HashDict.has_key? nick do
+      {:reply, :nick_in_use, users}
+    else
+      newusers = users |> HashDict.put(nick, node)
+      userlist = newusers |> HashDict.keys |> Enum.join ":"
+
+      {:reply, {:ok, userlist}, newusers}
+    end
+  end
+
+  def handle_call({:disconnect, Nnick}, _, Uusers) do
+    if users |> HashDict.has_key? nick do
+      {:reply, :ok, usersusers |> HashDict.delete nick}
+    else
+      {:reply, :user_not_found, users}
+    end
+  end
+
+  def handle_call(_, _, users) do
+    {:reply, :error, users}
+  end
+
+
+  % handle_cast is invoked in response to gen_server:cast
+  def handle_cast({:say, nick, msg}, users) do
+    broadcast(Nick, "SAID:" ++ Nick ++ ":" ++ Msg ++ "\n", Users),
+    {noreply, Users};
+
+handle_cast({private_message, Nick, Receiver, Msg}, Users) ->
+    Temp = dict:find(Receiver, Users),
+    case Temp of
+        {ok, [Socket|_]} ->
+            gen_tcp:send(Socket, "PVT:" ++ Nick ++ ":" ++ Msg ++ "\n");
+        _ ->
+            ok
+    end,
+    {noreply, Users};
+
+handle_cast({join, Nick}, Users) ->
+    broadcast(Nick, "JOIN:" ++ Nick ++ "\n", Users),
+    {noreply, Users};
+
+handle_cast({left, Nick}, Users) ->
+    broadcast(Nick, "LEFT:" ++ Nick ++ "\n", Users),
+    {noreply, Users};
+
+handle_cast(_Message, State) ->
+    {noreply, State}.
+
+
+% auxiliary functions
+broadcast(Nick, Msg, Users) ->
+    Sockets = lists:map(fun({_, [Value|_]}) -> Value end, dict:to_list(dict:erase(Nick, Users))),
+    lists:foreach(fun(Sock) -> gen_tcp:send(Sock, Msg) end, Sockets).
+
+user_list(Users) ->
+    UserList = dict:fetch_keys(Users),
+    string:join(UserList, ":").
+
+% Definitions to avoid gen_server compile warnings
+handle_info(_Message, State) -> {noreply, State}.
+terminate(_Reason, _State) -> ok.
+code_change(_OldVersion, State, _Extra) -> {ok, State}.
+end
